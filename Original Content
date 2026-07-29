@@ -1,0 +1,14 @@
+// original code from index.js
+// ...
+
+export default class DictatePlugin {
+  constructor() {
+    this.whisper = new Whisper();
+    // ...
+  }
+
+  async start(dictation) {
+    await this.whisper.start(dictation);
+    // ...
+  }
+}
