@@ -41,7 +41,7 @@ export function defaultDictateConfig(): DictateConfig {
 		whisperDir: defaultWhisperDir(),
 		whisperModel: defaultWhisperModel(),
 		whisperBin: defaultWhisperBin(),
-		llmUrl: 'http://192.168.2.249:1234',
+		llmUrl: 'http://localhost:1234',
 		llmModel: 'qwen/qwen3-coder-30b',
 		polishEnabled: false,
 		useSelectedNotebook: true,
