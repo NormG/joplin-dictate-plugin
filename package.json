@@ -1,6 +1,16 @@
 {
   "name": "joplin-plugin-dictate",
   "version": "1.0.0",
+  "description": "Record voice, transcribe locally with Whisper, and create Joplin notes or to-dos",
+  "author": "Norm Green",
+  "homepage": "https://github.com/NormG/joplin-dictate-plugin#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NormG/joplin-dictate-plugin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NormG/joplin-dictate-plugin/issues"
+  },
   "scripts": {
     "dist": "webpack --env joplin-plugin-config=buildMain && webpack --env joplin-plugin-config=buildExtraScripts && webpack --env joplin-plugin-config=createArchive",
     "prepare": "npm run dist",
@@ -9,7 +19,13 @@
   },
   "license": "MIT",
   "keywords": [
-    "joplin-plugin"
+    "joplin-plugin",
+    "dictate",
+    "voice",
+    "whisper",
+    "transcription",
+    "speech",
+    "todo"
   ],
   "files": [
     "publish"
