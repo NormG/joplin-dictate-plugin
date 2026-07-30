@@ -15,74 +15,13 @@ import { DictateSetupError } from './validate';
 const PANEL_ID = 'dictatePanel';
 
 const panelHtml = `
-<style>
-	.dictate-panel {
-		box-sizing: border-box;
-		padding: calc(var(--joplin-toolbar-height, 32px) + 10px) 10px 10px 14px;
-		font-family: inherit;
-		color: var(--joplin-color, inherit);
-		font-size: var(--joplin-font-size, 14px);
-	}
-	.dictate-panel h2 {
-		margin: 0 0 6px;
-		font-size: 1em;
-		font-weight: 600;
-		line-height: 1.2;
-	}
-	.dictate-panel .status {
-		margin: 0 0 8px;
-		color: var(--joplin-color-faded, #666);
-		min-height: 1.2em;
-		line-height: 1.3;
-		font-size: 0.92em;
-	}
-	.dictate-panel .actions {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		gap: 6px;
-	}
-	.dictate-panel button {
-		display: block;
-		width: fit-content;
-		max-width: 100%;
-		margin: 0;
-		padding: 5px 10px;
-		border: 1px solid var(--joplin-border-color4, #ccc);
-		border-radius: 4px;
-		background: var(--joplin-background-color3, #f7f7f7);
-		color: var(--joplin-color, inherit);
-		cursor: pointer;
-		font-size: 0.95em;
-		font-weight: 600;
-		line-height: 1.2;
-		white-space: nowrap;
-	}
-	.dictate-panel button.ready {
-		background: #27ae60;
-		border-color: #27ae60;
-		color: white;
-	}
-	.dictate-panel button.recording {
-		background: #d63031;
-		border-color: #d63031;
-		color: white;
-	}
-	.dictate-panel button.secondary {
-		background: var(--joplin-background-color3, #ececec);
-	}
-	.dictate-panel button:disabled {
-		opacity: 0.45;
-		cursor: default;
-	}
-</style>
 <div class="dictate-panel">
-	<h2>Dictate</h2>
+	<h2>Dictation</h2>
 	<p id="status" class="status">Ready.</p>
 	<div class="actions">
 		<button id="dictateBtn" class="ready" data-action="toggle">Dictate</button>
 		<button id="cancelBtn" class="secondary" data-action="cancel" disabled>Cancel</button>
-		<button id="fileBtn" class="secondary" data-action="transcribeFile">Transcribe file…</button>
+		<button id="fileBtn" class="ready" data-action="transcribeFile">Transcribe file…</button>
 	</div>
 </div>
 `;
@@ -162,6 +101,7 @@ async function ensurePanel(): Promise<string> {
 
 	panelHandle = await joplin.views.panels.create(PANEL_ID);
 	await joplin.views.panels.setHtml(panelHandle, panelHtml);
+	await joplin.views.panels.addScript(panelHandle, './webviews/dictatePanel.css');
 	await joplin.views.panels.addScript(panelHandle, './webviews/dictatePanel.js');
 
 	await joplin.views.panels.onMessage(panelHandle, async (message: { type?: string }) => {
@@ -241,7 +181,7 @@ export async function registerDictatePanelUi(): Promise<void> {
 	await joplin.views.toolbarButtons.create(
 		'dictateToolbarButton',
 		'dictate.togglePanel',
-		ToolbarButtonLocation.EditorToolbar,
+		ToolbarButtonLocation.NoteToolbar,
 	);
 
 	await joplin.views.menuItems.create(
