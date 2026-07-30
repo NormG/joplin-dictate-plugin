@@ -1,0 +1,97 @@
+function unwrapMessage(event) {
+	if (event && typeof event === 'object' && event.message !== undefined) {
+		return event.message;
+	}
+
+	return event;
+}
+
+function isRecording() {
+	const dictateBtn = document.getElementById('dictateBtn');
+	return !!dictateBtn && dictateBtn.classList.contains('recording');
+}
+
+function setStatus(text) {
+	const status = document.getElementById('status');
+	if (status) {
+		status.textContent = text;
+	}
+
+	const dictateBtn = document.getElementById('dictateBtn');
+	const cancelBtn = document.getElementById('cancelBtn');
+	const busy = text === 'Transcribing…'
+		|| text === 'Stopping…'
+		|| text === 'Polishing transcript…'
+		|| text === 'Creating note…';
+
+	if (dictateBtn) {
+		dictateBtn.disabled = busy;
+	}
+
+	if (cancelBtn) {
+		cancelBtn.disabled = busy || !isRecording();
+	}
+}
+
+function setRecording(active) {
+	const dictateBtn = document.getElementById('dictateBtn');
+	const cancelBtn = document.getElementById('cancelBtn');
+
+	if (dictateBtn) {
+		dictateBtn.disabled = false;
+		dictateBtn.textContent = active ? 'Stop Dictating' : 'Dictate';
+		dictateBtn.classList.toggle('ready', !active);
+		dictateBtn.classList.toggle('recording', active);
+	}
+
+	if (cancelBtn) {
+		cancelBtn.disabled = !active;
+	}
+}
+
+function sendAction(action) {
+	if (action === 'toggle') {
+		if (isRecording()) {
+			setStatus('Stopping…');
+			setRecording(false);
+		} else {
+			setRecording(true);
+			setStatus('Recording… press Stop Dictating when done.');
+		}
+	} else if (action === 'cancel') {
+		setRecording(false);
+		setStatus('Cancelling…');
+	} else if (action === 'transcribeFile') {
+		setStatus('Choose a WAV file…');
+	}
+
+	webviewApi.postMessage({ type: action });
+}
+
+document.addEventListener('click', (event) => {
+	const target = event.target instanceof HTMLElement
+		? event.target.closest('[data-action]')
+		: null;
+
+	if (!target) {
+		return;
+	}
+
+	event.preventDefault();
+	sendAction(target.getAttribute('data-action'));
+});
+
+webviewApi.onMessage((event) => {
+	const message = unwrapMessage(event);
+
+	if (message && message.type === 'status' && message.text) {
+		setStatus(message.text);
+	}
+
+	if (message && message.type === 'recording') {
+		setRecording(!!message.active);
+	}
+});
+
+setStatus('Ready.');
+setRecording(false);
