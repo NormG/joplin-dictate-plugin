@@ -41,6 +41,8 @@ Tools → Options → **Dictate**:
 - **Use selected notebook** — create the note in the notebook currently selected in Joplin.
 - **Default notebook ID** — fallback notebook when the above is disabled.
 
+> **Privacy:** transcription is always local. If you enable **Polish transcripts with LLM**, the transcript text is sent to the LLM server URL you configure. Point it at a local endpoint (e.g. `http://localhost:1234`) to keep everything on your machine; a remote or plain-`http` URL sends note text over the network in cleartext.
+
 ## Usage
 
 Open the **Dictate** panel (toolbar mic button or Tools → Dictate):
