@@ -11,6 +11,11 @@ function isRecording() {
 	return !!dictateBtn && dictateBtn.classList.contains('recording');
 }
 
+function isPaused() {
+	const pauseBtn = document.getElementById('pauseBtn');
+	return !!pauseBtn && pauseBtn.textContent === 'Resume';
+}
+
 function setStatus(text) {
 	const status = document.getElementById('status');
 	if (status) {
@@ -19,17 +24,22 @@ function setStatus(text) {
 
 	const dictateBtn = document.getElementById('dictateBtn');
 	const cancelBtn = document.getElementById('cancelBtn');
+	const fileBtn = document.getElementById('fileBtn');
 	const busy = text === 'Transcribing…'
 		|| text === 'Stopping…'
 		|| text === 'Polishing transcript…'
 		|| text === 'Creating note…';
 
 	if (dictateBtn) {
-		dictateBtn.disabled = busy;
+		dictateBtn.disabled = busy || isPaused();
 	}
 
 	if (cancelBtn) {
 		cancelBtn.disabled = busy || !isRecording();
+	}
+
+	if (fileBtn) {
+		fileBtn.disabled = busy || isRecording();
 	}
 }
 
@@ -37,6 +47,7 @@ function setRecording(active) {
 	const dictateBtn = document.getElementById('dictateBtn');
 	const pauseBtn = document.getElementById('pauseBtn');
 	const cancelBtn = document.getElementById('cancelBtn');
+	const fileBtn = document.getElementById('fileBtn');
 
 	if (dictateBtn) {
 		dictateBtn.disabled = false;
@@ -53,12 +64,22 @@ function setRecording(active) {
 	if (cancelBtn) {
 		cancelBtn.disabled = !active;
 	}
+
+	if (fileBtn) {
+		fileBtn.disabled = active;
+	}
 }
 
 function setPaused(active) {
 	const pauseBtn = document.getElementById('pauseBtn');
 	if (pauseBtn) {
 		pauseBtn.textContent = active ? 'Resume' : 'Pause';
+	}
+
+	// While paused, force a Resume before Stop is allowed.
+	const dictateBtn = document.getElementById('dictateBtn');
+	if (dictateBtn) {
+		dictateBtn.disabled = active;
 	}
 }
 

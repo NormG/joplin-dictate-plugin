@@ -8,12 +8,21 @@ export interface RecordAndTranscribeResult extends TranscriptionResult {
 }
 
 let activeRecording: RecordingSession | null = null;
+let isTranscribing = false;
 
 export function getActiveRecording(): RecordingSession | null {
 	return activeRecording;
 }
 
+export function isTranscriptionInProgress(): boolean {
+	return isTranscribing;
+}
+
 export async function startRecording(): Promise<void> {
+	if (isTranscribing) {
+		throw new Error('Cannot start dictation while a file is being transcribed');
+	}
+
 	if (activeRecording?.isActive) {
 		throw new Error('Recording is already in progress');
 	}
@@ -37,6 +46,7 @@ export async function stopRecordingAndTranscribe(
 
 	const session = activeRecording;
 	activeRecording = null;
+	isTranscribing = true;
 
 	try {
 		const wavPath = await session.stop();
@@ -44,6 +54,7 @@ export async function stopRecordingAndTranscribe(
 		return result;
 	} finally {
 		await session.dispose();
+		isTranscribing = false;
 	}
 }
 
@@ -51,7 +62,21 @@ export async function transcribeAudioFile(
 	config: DictateConfig,
 	wavPath: string,
 ): Promise<TranscriptionResult> {
-	return transcribeWav(config, wavPath);
+	if (activeRecording?.isActive) {
+		throw new Error('Cannot transcribe a file while dictation is in progress');
+	}
+
+	if (isTranscribing) {
+		throw new Error('A transcription is already in progress');
+	}
+
+	isTranscribing = true;
+
+	try {
+		return await transcribeWav(config, wavPath);
+	} finally {
+		isTranscribing = false;
+	}
 }
 
 export function pauseRecording(): void {
