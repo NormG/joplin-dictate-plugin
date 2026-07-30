@@ -35,17 +35,30 @@ function setStatus(text) {
 
 function setRecording(active) {
 	const dictateBtn = document.getElementById('dictateBtn');
+	const pauseBtn = document.getElementById('pauseBtn');
 	const cancelBtn = document.getElementById('cancelBtn');
 
 	if (dictateBtn) {
 		dictateBtn.disabled = false;
-		dictateBtn.textContent = active ? 'Stop Dictating' : 'Dictate';
+		dictateBtn.textContent = active ? 'Stop' : 'Dictate';
 		dictateBtn.classList.toggle('ready', !active);
 		dictateBtn.classList.toggle('recording', active);
 	}
 
+	if (pauseBtn) {
+		pauseBtn.disabled = !active;
+		pauseBtn.textContent = 'Pause';
+	}
+
 	if (cancelBtn) {
 		cancelBtn.disabled = !active;
+	}
+}
+
+function setPaused(active) {
+	const pauseBtn = document.getElementById('pauseBtn');
+	if (pauseBtn) {
+		pauseBtn.textContent = active ? 'Resume' : 'Pause';
 	}
 }
 
@@ -56,8 +69,10 @@ function sendAction(action) {
 			setRecording(false);
 		} else {
 			setRecording(true);
-			setStatus('Recording… press Stop Dictating when done.');
+			setStatus('Recording… press Stop when done.');
 		}
+	} else if (action === 'pause') {
+		// backend will send paused message to update button label
 	} else if (action === 'cancel') {
 		setRecording(false);
 		setStatus('Cancelling…');
@@ -90,6 +105,10 @@ webviewApi.onMessage((event) => {
 
 	if (message && message.type === 'recording') {
 		setRecording(!!message.active);
+	}
+
+	if (message && message.type === 'paused') {
+		setPaused(!!message.active);
 	}
 });
 

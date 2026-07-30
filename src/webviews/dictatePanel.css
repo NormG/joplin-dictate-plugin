@@ -4,11 +4,10 @@ body {
 
 .dictate-panel {
 	box-sizing: border-box;
-	padding: 6px 10px 10px 10px;
+	padding: 6px 8px 10px 8px;
 	font-family: inherit;
 	color: var(--joplin-color, inherit);
 	font-size: var(--joplin-font-size, 14px);
-	text-align: center;
 }
 
 .dictate-panel h2 {
@@ -28,16 +27,17 @@ body {
 
 .dictate-panel .actions {
 	display: flex;
-	flex-direction: column;
-	align-items: center;
+	flex-direction: row;
+	flex-wrap: wrap;
 	gap: 6px;
+	margin-bottom: 8px;
 }
 
 .dictate-panel button {
 	display: block;
 	width: fit-content;
 	margin: 0;
-	padding: 6px 16px;
+	padding: 5px 10px;
 	border: 1px solid var(--joplin-border-color4, #ccc);
 	border-radius: 4px;
 	background: var(--joplin-background-color3, #f7f7f7);

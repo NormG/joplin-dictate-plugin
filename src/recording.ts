@@ -10,6 +10,7 @@ export class RecordingSession {
 	private readonly wavPath: string;
 	private child: ChildProcessWithoutNullStreams | null = null;
 	private stderr = '';
+	private _isPaused = false;
 
 	constructor(tempDir: string, wavPath: string) {
 		this.tempDir = tempDir;
@@ -22,6 +23,24 @@ export class RecordingSession {
 
 	get isActive(): boolean {
 		return this.child !== null;
+	}
+
+	get isPaused(): boolean {
+		return this._isPaused;
+	}
+
+	pause(): void {
+		if (this.child && !this._isPaused) {
+			this.child.kill('SIGSTOP');
+			this._isPaused = true;
+		}
+	}
+
+	resume(): void {
+		if (this.child && this._isPaused) {
+			this.child.kill('SIGCONT');
+			this._isPaused = false;
+		}
 	}
 
 	static async start(): Promise<RecordingSession> {
@@ -51,6 +70,11 @@ export class RecordingSession {
 			throw new Error('Recording is not active');
 		}
 
+		if (this._isPaused) {
+			this.child.kill('SIGCONT');
+			this._isPaused = false;
+		}
+
 		const child = this.child;
 		this.child = null;
 
@@ -71,6 +95,10 @@ export class RecordingSession {
 
 	async dispose(): Promise<void> {
 		if (this.child) {
+			if (this._isPaused) {
+				this.child.kill('SIGCONT');
+				this._isPaused = false;
+			}
 			await terminateRecordingProcess(this.child);
 			this.child = null;
 		}

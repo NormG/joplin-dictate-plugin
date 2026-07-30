@@ -4,6 +4,8 @@ import { MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 import {
 	cancelRecording,
 	getActiveRecording,
+	pauseRecording,
+	resumeRecording,
 	startRecording,
 	stopRecordingAndTranscribe,
 	transcribeAudioFile,
@@ -17,12 +19,13 @@ const PANEL_ID = 'dictatePanel';
 const panelHtml = `
 <div class="dictate-panel">
 	<h2>Dictation</h2>
-	<p id="status" class="status">Ready.</p>
 	<div class="actions">
 		<button id="dictateBtn" class="ready" data-action="toggle">Dictate</button>
-		<button id="cancelBtn" class="secondary" data-action="cancel" disabled>Cancel</button>
+		<button id="pauseBtn" class="ready" data-action="pause" disabled>Pause</button>
+		<button id="cancelBtn" class="ready" data-action="cancel" disabled>Cancel</button>
 		<button id="fileBtn" class="ready" data-action="transcribeFile">Transcribe file…</button>
 	</div>
+	<p id="status" class="status">Ready.</p>
 </div>
 `;
 
@@ -125,9 +128,22 @@ async function ensurePanel(): Promise<string> {
 			}
 			break;
 
+		case 'pause':
+			if (getActiveRecording()?.isPaused) {
+				resumeRecording();
+				await postPanelMessage({ type: 'paused', active: false });
+				await postPanelMessage({ type: 'status', text: 'Recording… press Stop Dictating when done.' });
+			} else {
+				pauseRecording();
+				await postPanelMessage({ type: 'paused', active: true });
+				await postPanelMessage({ type: 'status', text: 'Paused.' });
+			}
+			break;
+
 		case 'cancel':
 			await cancelRecording();
 			await postPanelMessage({ type: 'recording', active: false });
+			await postPanelMessage({ type: 'paused', active: false });
 			await postPanelMessage({ type: 'status', text: 'Recording cancelled.' });
 			break;
 

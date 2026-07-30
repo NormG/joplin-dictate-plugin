@@ -54,6 +54,14 @@ export async function transcribeAudioFile(
 	return transcribeWav(config, wavPath);
 }
 
+export function pauseRecording(): void {
+	activeRecording?.pause();
+}
+
+export function resumeRecording(): void {
+	activeRecording?.resume();
+}
+
 export async function cancelRecording(): Promise<void> {
 	if (!activeRecording) {
 		return;
