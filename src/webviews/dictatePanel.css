@@ -1,10 +1,12 @@
 body {
+	margin: 0;
 	background-color: var(--joplin-background-color3, #F4F5F6);
 }
 
 .dictate-panel {
 	box-sizing: border-box;
-	padding: 14px 8px 10px 8px;
+	/* ~5mm left/right inset (18px @ 96dpi), symmetric on both edges. */
+	padding: 14px 18px 10px 18px;
 	font-family: inherit;
 	color: var(--joplin-color, inherit);
 	font-size: var(--joplin-font-size, 14px);
