@@ -108,7 +108,12 @@ export class RecordingSession {
 }
 
 async function terminateRecordingProcess(child: ChildProcessWithoutNullStreams): Promise<void> {
-	if (child.killed || child.exitCode !== null) {
+	// Note: do NOT gate on child.killed here. Node sets `killed` to true after
+	// any signal is sent — including the SIGSTOP/SIGCONT used by pause/resume —
+	// even though the process is still alive. Gating on it would skip SIGINT and
+	// leave pw-record running, so the WAV header is never finalized (whisper then
+	// decodes 0 samples). Only short-circuit when the process has actually exited.
+	if (child.exitCode !== null) {
 		return;
 	}
 
@@ -126,13 +131,13 @@ async function terminateRecordingProcess(child: ChildProcessWithoutNullStreams):
 		child.kill('SIGINT');
 
 		setTimeout(() => {
-			if (!child.killed && child.exitCode === null) {
+			if (child.exitCode === null) {
 				child.kill('SIGTERM');
 			}
 		}, 1500);
 
 		setTimeout(() => {
-			if (!child.killed && child.exitCode === null) {
+			if (child.exitCode === null) {
 				child.kill('SIGKILL');
 			}
 			finish();

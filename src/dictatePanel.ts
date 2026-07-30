@@ -18,14 +18,16 @@ const PANEL_ID = 'dictatePanel';
 
 const panelHtml = `
 <div class="dictate-panel">
-	<h2>Dictation</h2>
 	<div class="actions">
 		<button id="dictateBtn" class="ready" data-action="toggle">Dictate</button>
 		<button id="pauseBtn" class="ready" data-action="pause" disabled>Pause</button>
 		<button id="cancelBtn" class="ready" data-action="cancel" disabled>Cancel</button>
 		<button id="fileBtn" class="ready" data-action="transcribeFile">Transcribe file…</button>
 	</div>
-	<p id="status" class="status">Ready.</p>
+	<div class="status-row">
+		<span class="status-label">Status</span>
+		<span id="status" class="status">Ready.</span>
+	</div>
 </div>
 `;
 
