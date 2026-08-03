@@ -196,6 +196,7 @@ function setStatus(text) {
 	const busy = text === 'Transcribing…'
 		|| text === 'Stopping…'
 		|| text === 'Polishing transcript…'
+		|| text === 'Polishing complete. Saving note…'
 		|| text === 'Creating note…';
 
 	if (dictateBtn) {
