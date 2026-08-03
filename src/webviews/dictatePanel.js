@@ -32,19 +32,11 @@ function getOptionElements() {
 	};
 }
 
-function isConcreteNotebookSelected() {
-	const els = getOptionElements();
-	const value = els.notebookSelect ? els.notebookSelect.value : '';
-	return value.length > 0 && value !== '__pick__' && value !== '__default__';
-}
-
 function updateDueControlsEnabled() {
 	const els = getOptionElements();
 	const locked = isRecording();
 	const todoEnabled = !!els.todoCheck && els.todoCheck.checked;
 	const hasDate = !!els.dueDate && els.dueDate.value.length > 0;
-	const existingNotebookSelected = isConcreteNotebookSelected();
-	const createNotebookDisabled = locked || existingNotebookSelected;
 
 	if (els.notebookSelect) {
 		els.notebookSelect.disabled = locked;
@@ -55,26 +47,22 @@ function updateDueControlsEnabled() {
 	}
 
 	if (els.newNotebookBtn) {
-		els.newNotebookBtn.disabled = createNotebookDisabled;
+		els.newNotebookBtn.disabled = locked;
+		els.newNotebookBtn.title = locked
+			? 'Create notebook'
+			: 'Create a new notebook (replaces current selection)';
 	}
 
 	if (els.newNotebookName) {
-		els.newNotebookName.disabled = createNotebookDisabled;
+		els.newNotebookName.disabled = locked;
 	}
 
 	if (els.createNotebookBtn) {
-		els.createNotebookBtn.disabled = createNotebookDisabled;
+		els.createNotebookBtn.disabled = locked;
 	}
 
 	if (els.cancelNotebookBtn) {
-		els.cancelNotebookBtn.disabled = createNotebookDisabled;
-	}
-
-	if (existingNotebookSelected && els.newNotebookRow) {
-		els.newNotebookRow.classList.add('hidden');
-		if (els.newNotebookName) {
-			els.newNotebookName.value = '';
-		}
+		els.cancelNotebookBtn.disabled = locked;
 	}
 
 	if (els.todoCheck) {

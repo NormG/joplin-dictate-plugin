@@ -225,7 +225,7 @@ async function ensurePanel(): Promise<string> {
 			const title = message.title?.trim();
 			if (!title) {
 				await postPanelMessage({ type: 'status', text: 'Enter a notebook name first.' });
-				return;
+				break;
 			}
 
 			try {
@@ -255,7 +255,6 @@ async function ensurePanel(): Promise<string> {
 
 					const result = await stopRecordingAndTranscribe(config);
 					await finishDictation(config, result.text, noteOptions);
-					await postPanelMessage({ type: 'status', text: 'Ready.' });
 				});
 			} else {
 				await withConfig(async () => {
