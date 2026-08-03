@@ -26,3 +26,6 @@ export interface NoteCreateOptions {
 
 export const NOTEBOOK_PICK = '__pick__';
 export const NOTEBOOK_DEFAULT = '__default__';
+
+/** Receives granular note-creation status updates for UI display. */
+export type NoteCreationStatusCallback = (status: string) => void | Promise<void>;

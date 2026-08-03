@@ -11,9 +11,9 @@ import {
 	stopRecordingAndTranscribe,
 	transcribeAudioFile,
 } from './pipeline';
-import { createNoteFromTranscript, openCreatedNote } from './notes';
+import { openCreatedNote, processNoteCreation } from './notes';
 import { loadDictateConfig } from './settings';
-import { DictateFolder, NOTEBOOK_PICK, NoteCreateOptions } from './types';
+import { DictateFolder, NOTEBOOK_PICK, NoteCreateOptions, NoteCreationStatusCallback } from './types';
 import { DictateSetupError } from './validate';
 
 const PANEL_ID = 'dictatePanel';
@@ -159,13 +159,11 @@ async function finishDictation(
 		return;
 	}
 
-	if (config.polishEnabled) {
-		await postPanelMessage({ type: 'status', text: 'Polishing transcript…' });
-	}
+	const onNoteCreationStatus: NoteCreationStatusCallback = async (status) => {
+		await postPanelMessage({ type: 'status', text: status });
+	};
 
-	await postPanelMessage({ type: 'status', text: 'Creating note…' });
-
-	const note = await createNoteFromTranscript(config, text, noteOptions);
+	const note = await processNoteCreation(config, text, noteOptions, onNoteCreationStatus);
 	await openCreatedNote(note.id);
 
 	const kind = note.isTodo ? 'To-do' : 'Note';

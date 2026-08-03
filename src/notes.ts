@@ -1,7 +1,7 @@
 import joplin from 'api';
 
 import { polishTranscript } from './polish';
-import { DictateConfig, NoteCreateOptions, NOTEBOOK_DEFAULT, NOTEBOOK_PICK } from './types';
+import { DictateConfig, NoteCreateOptions, NoteCreationStatusCallback, NOTEBOOK_DEFAULT, NOTEBOOK_PICK } from './types';
 
 export interface CreatedNote {
 	id: string;
@@ -75,41 +75,32 @@ export async function resolveParentFolderId(
 	return fallback.length > 0 ? fallback : undefined;
 }
 
-export async function createNoteFromTranscript(
+async function saveNoteFromBody(
 	config: DictateConfig,
-	rawText: string,
-	options: NoteCreateOptions = { isTodo: false },
+	body: string,
+	options: NoteCreateOptions,
 ): Promise<CreatedNote> {
-	const text = rawText.trim();
-	if (text.length === 0) {
-		throw new Error('No speech detected.');
-	}
-
-	let body = text;
-	if (config.polishEnabled) {
-		body = await polishTranscript(config, text);
-	}
-
 	const title = options.title?.trim()
 		? options.title.trim().slice(0, 80)
 		: deriveNoteTitle(body);
 	let isTodo = options.isTodo;
 	let dueHuman: string | undefined;
 	let todoDue: number | undefined;
+	let noteBody = body;
 
 	if (options.due?.trim()) {
 		const parsed = parseDueDate(options.due);
 		todoDue = parsed.todoDue;
 		dueHuman = parsed.human;
 		isTodo = true;
-		body = `Due: ${dueHuman}\n\n${body}`;
+		noteBody = `Due: ${dueHuman}\n\n${body}`;
 	}
 
 	const parentId = await resolveParentFolderId(config, options.parentId);
 
 	const payload: Record<string, unknown> = {
 		title,
-		body,
+		body: noteBody,
 	};
 
 	if (parentId) {
@@ -133,11 +124,42 @@ export async function createNoteFromTranscript(
 	return {
 		id,
 		title: (created?.title as string | undefined) ?? title,
-		body,
+		body: noteBody,
 		parentId,
 		isTodo,
 		dueHuman,
 	};
+}
+
+export async function processNoteCreation(
+	config: DictateConfig,
+	rawText: string,
+	options: NoteCreateOptions = { isTodo: false },
+	statusCallback: NoteCreationStatusCallback = () => {},
+): Promise<CreatedNote> {
+	const text = rawText.trim();
+	if (text.length === 0) {
+		throw new Error('No speech detected.');
+	}
+
+	let body = text;
+	if (config.polishEnabled) {
+		await statusCallback('Polishing transcript…');
+		body = await polishTranscript(config, text);
+		await statusCallback('Polishing complete. Saving note…');
+	} else {
+		await statusCallback('Creating note…');
+	}
+
+	return saveNoteFromBody(config, body, options);
+}
+
+export async function createNoteFromTranscript(
+	config: DictateConfig,
+	rawText: string,
+	options: NoteCreateOptions = { isTodo: false },
+): Promise<CreatedNote> {
+	return processNoteCreation(config, rawText, options);
 }
 
 export async function openCreatedNote(noteId: string): Promise<void> {
