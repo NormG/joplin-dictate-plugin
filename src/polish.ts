@@ -1,4 +1,5 @@
 import { DictateConfig } from './types';
+import { logInfo } from './logger';
 
 interface ChatCompletionResponse {
 	choices?: Array<{
@@ -19,6 +20,7 @@ const POLISH_TIMEOUT_MS = 60000;
 
 export async function polishTranscript(config: DictateConfig, text: string): Promise<string> {
 	const url = `${config.llmUrl.replace(/\/$/, '')}/v1/chat/completions`;
+	logInfo('Polishing transcript', { url, model: config.llmModel, chars: text.length });
 	const controller = new AbortController();
 	const timeoutId = setTimeout(() => controller.abort(), POLISH_TIMEOUT_MS);
 
@@ -50,6 +52,7 @@ export async function polishTranscript(config: DictateConfig, text: string): Pro
 			throw new Error('LLM returned empty response');
 		}
 
+		logInfo('Polish complete', { chars: polished.length });
 		return polished;
 	} catch (error) {
 		if (error instanceof Error && error.name === 'AbortError') {

@@ -3,6 +3,8 @@ import { promises as fs } from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
+import { logDebug, logInfo } from './logger';
+
 const STOP_TIMEOUT_MS = 5000;
 
 export class RecordingSession {
@@ -62,6 +64,7 @@ export class RecordingSession {
 			session.stderr = session.stderr || error.message;
 		});
 
+		logInfo('pw-record started', { wavPath, tempDir });
 		return session;
 	}
 
@@ -90,6 +93,7 @@ export class RecordingSession {
 			);
 		}
 
+		logInfo('Recording stopped', { wavPath: this.wavPath, bytes: wavSize });
 		return this.wavPath;
 	}
 
@@ -104,6 +108,7 @@ export class RecordingSession {
 		}
 
 		await fs.rm(this.tempDir, { recursive: true, force: true });
+		logDebug('Recording session disposed', { tempDir: this.tempDir });
 	}
 }
 

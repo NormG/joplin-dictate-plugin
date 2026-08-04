@@ -7,6 +7,7 @@ export interface DictateConfig {
 	polishEnabled: boolean;
 	useSelectedNotebook: boolean;
 	defaultParentId: string;
+	debugLogging: boolean;
 }
 
 export interface DictateFolder {

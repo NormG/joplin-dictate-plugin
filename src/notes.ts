@@ -1,5 +1,6 @@
 import joplin from 'api';
 
+import { logInfo, logWarn } from './logger';
 import { polishTranscript } from './polish';
 import { DictateConfig, NoteCreateOptions, NoteCreationStatusCallback, NOTEBOOK_DEFAULT, NOTEBOOK_PICK } from './types';
 
@@ -10,6 +11,8 @@ export interface CreatedNote {
 	parentId?: string;
 	isTodo: boolean;
 	dueHuman?: string;
+	/** True when polish was enabled but failed; note body is the raw transcript. */
+	rawFallback?: boolean;
 }
 
 function formatDictationTimestamp(date: Date): string {
@@ -79,6 +82,7 @@ async function saveNoteFromBody(
 	config: DictateConfig,
 	body: string,
 	options: NoteCreateOptions,
+	rawFallback = false,
 ): Promise<CreatedNote> {
 	const title = options.title?.trim()
 		? options.title.trim().slice(0, 80)
@@ -121,6 +125,15 @@ async function saveNoteFromBody(
 		throw new Error('Joplin did not return a note ID after creation.');
 	}
 
+	logInfo('Note created', {
+		id,
+		title,
+		parentId,
+		isTodo,
+		dueHuman,
+		rawFallback,
+	});
+
 	return {
 		id,
 		title: (created?.title as string | undefined) ?? title,
@@ -128,6 +141,7 @@ async function saveNoteFromBody(
 		parentId,
 		isTodo,
 		dueHuman,
+		rawFallback: rawFallback || undefined,
 	};
 }
 
@@ -142,16 +156,21 @@ export async function processNoteCreation(
 		throw new Error('No speech detected.');
 	}
 
-	let body = text;
-	if (config.polishEnabled) {
-		await statusCallback('Polishing transcript…');
-		body = await polishTranscript(config, text);
-		await statusCallback('Polishing complete. Saving note…');
-	} else {
+	if (!config.polishEnabled) {
 		await statusCallback('Creating note…');
+		return saveNoteFromBody(config, text, options);
 	}
 
-	return saveNoteFromBody(config, body, options);
+	try {
+		await statusCallback('Polishing transcript…');
+		const polished = await polishTranscript(config, text);
+		await statusCallback('Polishing complete. Saving note…');
+		return await saveNoteFromBody(config, polished, options);
+	} catch (error) {
+		logWarn('Polish or polished save failed; saving raw transcript', error);
+		await statusCallback('Polish failed — saving raw transcript…');
+		return await saveNoteFromBody(config, text, options, true);
+	}
 }
 
 export async function createNoteFromTranscript(

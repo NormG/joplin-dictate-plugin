@@ -1,4 +1,5 @@
 import { RecordingSession } from './recording';
+import { logDebug, logInfo } from './logger';
 import { transcribeWav, TranscriptionResult } from './transcribe';
 import { DictateConfig } from './types';
 import { assertDictateReady } from './validate';
@@ -33,6 +34,7 @@ export async function startRecording(): Promise<void> {
 	}
 
 	activeRecording = await RecordingSession.start();
+	logInfo('Recording started');
 }
 
 export async function stopRecordingAndTranscribe(
@@ -47,10 +49,12 @@ export async function stopRecordingAndTranscribe(
 	const session = activeRecording;
 	activeRecording = null;
 	isTranscribing = true;
+	logInfo('Stopping recording and transcribing');
 
 	try {
 		const wavPath = await session.stop();
 		const result = await transcribeWav(config, wavPath);
+		logInfo('Transcription finished', { chars: result.text.length, wavPath });
 		return result;
 	} finally {
 		await session.dispose();
@@ -71,9 +75,12 @@ export async function transcribeAudioFile(
 	}
 
 	isTranscribing = true;
+	logInfo('Transcribing file', { wavPath });
 
 	try {
-		return await transcribeWav(config, wavPath);
+		const result = await transcribeWav(config, wavPath);
+		logInfo('File transcription finished', { chars: result.text.length, wavPath });
+		return result;
 	} finally {
 		isTranscribing = false;
 	}
@@ -94,5 +101,6 @@ export async function cancelRecording(): Promise<void> {
 
 	const session = activeRecording;
 	activeRecording = null;
+	logDebug('Recording cancelled');
 	await session.dispose();
 }

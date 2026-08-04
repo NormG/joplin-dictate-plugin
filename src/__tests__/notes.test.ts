@@ -18,6 +18,7 @@ const baseConfig: DictateConfig = {
 	polishEnabled: false,
 	useSelectedNotebook: false,
 	defaultParentId: 'folder-default',
+	debugLogging: false,
 };
 
 describe('deriveNoteTitle', () => {
@@ -35,6 +36,46 @@ describe('parseDueDate', () => {
 
 	it('rejects invalid input', () => {
 		expect(() => parseDueDate('not-a-date')).toThrow(/Could not parse due date/);
+	});
+});
+
+describe('Mandatory Raw Save Fallback Test', () => {
+	beforeEach(() => {
+		vi.mocked(polishTranscript).mockClear();
+	});
+
+	it('saves the original raw transcript when LLM polish fails (API error)', async () => {
+		vi.mocked(polishTranscript).mockRejectedValueOnce(new Error('LLM server returned 503'));
+
+		const statuses: string[] = [];
+		const note = await processNoteCreation(
+			{ ...baseConfig, polishEnabled: true },
+			'Meeting notes about the Q3 roadmap.',
+			{ isTodo: false, parentId: 'folder-1' },
+			async (status) => { statuses.push(status); },
+		);
+
+		expect(statuses).toEqual([
+			'Polishing transcript…',
+			'Polish failed — saving raw transcript…',
+		]);
+		expect(note.body).toBe('Meeting notes about the Q3 roadmap.');
+		expect(note.rawFallback).toBe(true);
+	});
+
+	it('saves the original raw transcript when LLM polish times out', async () => {
+		vi.mocked(polishTranscript).mockRejectedValueOnce(
+			new Error('LLM request timed out after 60s (http://localhost:8080/v1/chat/completions)'),
+		);
+
+		const note = await processNoteCreation(
+			{ ...baseConfig, polishEnabled: true },
+			'can u meet next week?',
+			{ isTodo: false, parentId: 'folder-1' },
+		);
+
+		expect(note.body).toBe('can u meet next week?');
+		expect(note.rawFallback).toBe(true);
 	});
 });
 

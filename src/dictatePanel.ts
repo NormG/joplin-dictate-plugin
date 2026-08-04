@@ -2,6 +2,7 @@ import joplin from 'api';
 import { MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 
 import { createNotebookFolder, listNotebookFolders } from './folders';
+import { logError, logInfo } from './logger';
 import {
 	cancelRecording,
 	getActiveRecording,
@@ -136,7 +137,8 @@ async function syncPanelUi(): Promise<void> {
 	});
 }
 
-async function showError(message: string): Promise<void> {
+async function showError(message: string, error?: unknown): Promise<void> {
+	logError(message, error);
 	await postPanelMessage({ type: 'recording', active: false });
 	await postPanelMessage({ type: 'paused', active: false });
 	await postPanelMessage({ type: 'optionsLocked', locked: false });
@@ -168,9 +170,13 @@ async function finishDictation(
 
 	const kind = note.isTodo ? 'To-do' : 'Note';
 	const dueSuffix = note.dueHuman ? ` (due ${note.dueHuman})` : '';
-	await postPanelMessage({ type: 'status', text: `${kind} created: ${note.title}` });
+	const fallbackSuffix = note.rawFallback ? ' (raw transcript — polish failed)' : '';
+	await postPanelMessage({
+		type: 'status',
+		text: `${kind} created: ${note.title}${fallbackSuffix}`,
+	});
 	await joplin.views.dialogs.showToast({
-		message: `${kind} created: ${note.title}${dueSuffix}`,
+		message: `${kind} created: ${note.title}${dueSuffix}${fallbackSuffix}`,
 		duration: 8000,
 	});
 }
@@ -185,7 +191,7 @@ async function withConfig<T>(
 		const message = error instanceof DictateSetupError || error instanceof Error
 			? error.message
 			: 'Unexpected error while running Dictate';
-		await showError(message);
+		await showError(message, error);
 	}
 }
 
@@ -206,6 +212,7 @@ async function ensurePanel(): Promise<string> {
 				await loadFoldersForPanel(panelNoteOptions.parentId);
 			} catch (error) {
 				const errText = error instanceof Error ? error.message : 'Failed to load notebooks';
+				logError('Failed to load notebooks', error);
 				await postPanelMessage({ type: 'status', text: `Error: ${errText}` });
 			}
 			break;
@@ -236,6 +243,7 @@ async function ensurePanel(): Promise<string> {
 				await postPanelMessage({ type: 'status', text: `Created notebook: ${folder.title}` });
 			} catch (error) {
 				const errText = error instanceof Error ? error.message : 'Failed to create notebook';
+				logError('Failed to create notebook', error);
 				await postPanelMessage({ type: 'status', text: `Error: ${errText}` });
 			}
 			break;
@@ -243,6 +251,7 @@ async function ensurePanel(): Promise<string> {
 
 		case 'toggle':
 			if (getActiveRecording()?.isActive) {
+				logInfo('Panel: stop dictation');
 				await withConfig(async (config) => {
 					await postPanelMessage({ type: 'status', text: 'Transcribing…' });
 					await postPanelMessage({ type: 'recording', active: false });
@@ -255,6 +264,7 @@ async function ensurePanel(): Promise<string> {
 					await finishDictation(config, result.text, noteOptions);
 				});
 			} else {
+				logInfo('Panel: start dictation');
 				await withConfig(async () => {
 					sessionNoteOptions = getCurrentNoteOptions();
 					await startRecording();
@@ -278,6 +288,7 @@ async function ensurePanel(): Promise<string> {
 			break;
 
 		case 'cancel':
+			logInfo('Panel: cancel recording');
 			await cancelRecording();
 			sessionNoteOptions = null;
 			await postPanelMessage({ type: 'recording', active: false });
@@ -298,6 +309,7 @@ async function ensurePanel(): Promise<string> {
 					return;
 				}
 
+				logInfo('Panel: transcribe file', { path: paths[0] });
 				await postPanelMessage({ type: 'status', text: 'Transcribing…' });
 				const result = await transcribeAudioFile(config, paths[0]);
 				await finishDictation(config, result.text, getCurrentNoteOptions());

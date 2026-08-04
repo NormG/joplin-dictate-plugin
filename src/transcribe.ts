@@ -4,6 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 
 import { filterTranscript } from './transcript';
+import { logInfo } from './logger';
 import { DictateConfig } from './types';
 import { assertDictateReady } from './validate';
 
@@ -24,6 +25,11 @@ export async function transcribeWav(
 	const txtBase = path.join(tempDir, 'recording');
 
 	try {
+		logInfo('Running whisper-cli', {
+			bin: config.whisperBin,
+			model: config.whisperModel,
+			wavPath,
+		});
 		await runWhisperCli(config, wavPath, txtBase);
 
 		const { path: transcriptPath, raw } = await readWhisperTranscript(txtBase, tempDir);
