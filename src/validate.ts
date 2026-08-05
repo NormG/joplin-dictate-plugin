@@ -1,20 +1,10 @@
-import { promises as fs } from 'fs';
-
+import { pathExists } from './fsUtils';
 import { DictateConfig } from './types';
 
 export class DictateSetupError extends Error {
 	constructor(message: string) {
 		super(message);
 		this.name = 'DictateSetupError';
-	}
-}
-
-async function pathExists(filePath: string): Promise<boolean> {
-	try {
-		await fs.access(filePath);
-		return true;
-	} catch {
-		return false;
 	}
 }
 

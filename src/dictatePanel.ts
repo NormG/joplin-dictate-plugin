@@ -1,6 +1,7 @@
 import joplin from 'api';
 import { MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 
+import { errorMessage } from './errors';
 import { createNotebookFolder, listNotebookFolders } from './folders';
 import { logError, logInfo } from './logger';
 import {
@@ -15,7 +16,6 @@ import {
 import { openCreatedNote, processNoteCreation } from './notes';
 import { loadDictateConfig } from './settings';
 import { DictateFolder, NOTEBOOK_PICK, NoteCreateOptions, NoteCreationStatusCallback } from './types';
-import { DictateSetupError } from './validate';
 
 const PANEL_ID = 'dictatePanel';
 
@@ -188,10 +188,7 @@ async function withConfig<T>(
 		const config = await loadDictateConfig();
 		return await action(config);
 	} catch (error) {
-		const message = error instanceof DictateSetupError || error instanceof Error
-			? error.message
-			: 'Unexpected error while running Dictate';
-		await showError(message, error);
+		await showError(errorMessage(error, 'Unexpected error while running Dictate'), error);
 	}
 }
 
@@ -211,9 +208,11 @@ async function ensurePanel(): Promise<string> {
 			try {
 				await loadFoldersForPanel(panelNoteOptions.parentId);
 			} catch (error) {
-				const errText = error instanceof Error ? error.message : 'Failed to load notebooks';
 				logError('Failed to load notebooks', error);
-				await postPanelMessage({ type: 'status', text: `Error: ${errText}` });
+				await postPanelMessage({
+					type: 'status',
+					text: `Error: ${errorMessage(error, 'Failed to load notebooks')}`,
+				});
 			}
 			break;
 
@@ -242,9 +241,11 @@ async function ensurePanel(): Promise<string> {
 				await loadFoldersForPanel(folder.id);
 				await postPanelMessage({ type: 'status', text: `Created notebook: ${folder.title}` });
 			} catch (error) {
-				const errText = error instanceof Error ? error.message : 'Failed to create notebook';
 				logError('Failed to create notebook', error);
-				await postPanelMessage({ type: 'status', text: `Error: ${errText}` });
+				await postPanelMessage({
+					type: 'status',
+					text: `Error: ${errorMessage(error, 'Failed to create notebook')}`,
+				});
 			}
 			break;
 		}

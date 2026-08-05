@@ -3,3 +3,6 @@ node_modules/
 publish/
 .aider*
 PROTOCOL.md
+
+# Local Cursor agent skills (installed from ~/.cursor/skills-source/)
+.cursor/skills/

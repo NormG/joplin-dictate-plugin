@@ -1,9 +1,10 @@
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { promises as fs } from 'fs';
-import * as os from 'os';
 import * as path from 'path';
 
+import { createTempDir, fileSize } from './fsUtils';
 import { logDebug, logInfo } from './logger';
+import { captureProcessStderr } from './processUtils';
 
 const STOP_TIMEOUT_MS = 5000;
 
@@ -11,7 +12,7 @@ export class RecordingSession {
 	private readonly tempDir: string;
 	private readonly wavPath: string;
 	private child: ChildProcessWithoutNullStreams | null = null;
-	private stderr = '';
+	private getStderr: (() => string) | null = null;
 	private _isPaused = false;
 
 	constructor(tempDir: string, wavPath: string) {
@@ -46,7 +47,7 @@ export class RecordingSession {
 	}
 
 	static async start(): Promise<RecordingSession> {
-		const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dictate-'));
+		const tempDir = await createTempDir('dictate-');
 		const wavPath = path.join(tempDir, 'recording.wav');
 		const session = new RecordingSession(tempDir, wavPath);
 
@@ -56,13 +57,7 @@ export class RecordingSession {
 			{ stdio: ['ignore', 'ignore', 'pipe'] },
 		);
 
-		session.child.stderr.on('data', (chunk: Buffer) => {
-			session.stderr += chunk.toString();
-		});
-
-		session.child.on('error', (error) => {
-			session.stderr = session.stderr || error.message;
-		});
+		session.getStderr = captureProcessStderr(session.child);
 
 		logInfo('pw-record started', { wavPath, tempDir });
 		return session;
@@ -73,19 +68,18 @@ export class RecordingSession {
 			throw new Error('Recording is not active');
 		}
 
-		if (this._isPaused) {
-			this.child.kill('SIGCONT');
-			this._isPaused = false;
-		}
+		this.ensureResumed();
 
 		const child = this.child;
+		const getStderr = this.getStderr;
 		this.child = null;
+		this.getStderr = null;
 
 		await terminateRecordingProcess(child);
 
 		const wavSize = await fileSize(this.wavPath);
 		if (wavSize === 0) {
-			const recordErr = this.stderr.trim();
+			const recordErr = getStderr?.().trim() ?? '';
 			throw new Error(
 				recordErr.length > 0
 					? `Recording error: ${recordErr}`
@@ -99,16 +93,21 @@ export class RecordingSession {
 
 	async dispose(): Promise<void> {
 		if (this.child) {
-			if (this._isPaused) {
-				this.child.kill('SIGCONT');
-				this._isPaused = false;
-			}
+			this.ensureResumed();
 			await terminateRecordingProcess(this.child);
 			this.child = null;
+			this.getStderr = null;
 		}
 
 		await fs.rm(this.tempDir, { recursive: true, force: true });
 		logDebug('Recording session disposed', { tempDir: this.tempDir });
+	}
+
+	private ensureResumed(): void {
+		if (this.child && this._isPaused) {
+			this.child.kill('SIGCONT');
+			this._isPaused = false;
+		}
 	}
 }
 
@@ -148,13 +147,4 @@ async function terminateRecordingProcess(child: ChildProcessWithoutNullStreams):
 			finish();
 		}, STOP_TIMEOUT_MS);
 	});
-}
-
-async function fileSize(filePath: string): Promise<number> {
-	try {
-		const stats = await fs.stat(filePath);
-		return stats.size;
-	} catch {
-		return 0;
-	}
 }
