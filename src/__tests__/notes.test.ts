@@ -8,6 +8,7 @@ vi.mock('../polish', () => ({
 
 import { deriveNoteTitle, parseDueDate, processNoteCreation } from '../notes';
 import { polishTranscript } from '../polish';
+import joplin from 'api';
 
 const baseConfig: DictateConfig = {
 	whisperDir: '/tmp/whisper',
@@ -42,6 +43,11 @@ describe('parseDueDate', () => {
 describe('Mandatory Raw Save Fallback Test', () => {
 	beforeEach(() => {
 		vi.mocked(polishTranscript).mockClear();
+		vi.mocked(joplin.data.post).mockClear();
+		vi.mocked(joplin.data.post).mockImplementation(async (_path, _query, payload) => ({
+			id: 'note-test-id',
+			title: payload.title,
+		}));
 	});
 
 	it('saves the original raw transcript when LLM polish fails (API error)', async () => {
@@ -76,6 +82,18 @@ describe('Mandatory Raw Save Fallback Test', () => {
 
 		expect(note.body).toBe('can u meet next week?');
 		expect(note.rawFallback).toBe(true);
+	});
+
+	it('does not fall back when polished note save fails', async () => {
+		vi.mocked(joplin.data.post).mockResolvedValueOnce({ title: 'polished title' });
+
+		await expect(processNoteCreation(
+			{ ...baseConfig, polishEnabled: true },
+			'Raw transcript',
+			{ isTodo: false, parentId: 'folder-1' },
+		)).rejects.toThrow('Joplin did not return a note ID after creation.');
+
+		expect(joplin.data.post).toHaveBeenCalledOnce();
 	});
 });
 

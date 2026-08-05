@@ -161,16 +161,18 @@ export async function processNoteCreation(
 		return saveNoteFromBody(config, text, options);
 	}
 
+	await statusCallback('Polishing transcript…');
+	let polished: string;
 	try {
-		await statusCallback('Polishing transcript…');
-		const polished = await polishTranscript(config, text);
-		await statusCallback('Polishing complete. Saving note…');
-		return await saveNoteFromBody(config, polished, options);
+		polished = await polishTranscript(config, text);
 	} catch (error) {
-		logWarn('Polish or polished save failed; saving raw transcript', error);
+		logWarn('Polish failed; saving raw transcript', error);
 		await statusCallback('Polish failed — saving raw transcript…');
-		return await saveNoteFromBody(config, text, options, true);
+		return saveNoteFromBody(config, text, options, true);
 	}
+
+	await statusCallback('Polishing complete. Saving note…');
+	return saveNoteFromBody(config, polished, options);
 }
 
 export async function createNoteFromTranscript(
