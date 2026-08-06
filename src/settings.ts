@@ -4,6 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 
 import { DictateConfig } from './types';
+import { normalizeLlmTimeoutSec } from './llmTimeout';
 
 export const SETTINGS_SECTION = 'dictateSettings';
 
@@ -167,7 +168,7 @@ export async function loadDictateConfig(): Promise<DictateConfig> {
 		whisperBin: stringSetting(values.whisperBin, defaults.whisperBin),
 		llmUrl: stringSetting(values.llmUrl, defaults.llmUrl),
 		llmModel: stringSetting(values.llmModel, defaults.llmModel),
-		llmTimeoutSec: timeoutSetting(values.llmTimeoutSec, defaults.llmTimeoutSec),
+		llmTimeoutSec: normalizeLlmTimeoutSec(values.llmTimeoutSec, defaults.llmTimeoutSec),
 		polishEnabled: booleanSetting(values.polishEnabled, defaults.polishEnabled),
 		useSelectedNotebook: booleanSetting(values.useSelectedNotebook, defaults.useSelectedNotebook),
 		defaultParentId: stringSetting(values.defaultParentId, defaults.defaultParentId),
@@ -186,16 +187,4 @@ function stringSetting(value: unknown, fallback: string): string {
 
 function booleanSetting(value: unknown, fallback: boolean): boolean {
 	return typeof value === 'boolean' ? value : fallback;
-}
-
-const MIN_LLM_TIMEOUT_SEC = 5;
-const MAX_LLM_TIMEOUT_SEC = 600;
-
-function timeoutSetting(value: unknown, fallback: number): number {
-	if (typeof value !== 'number' || !Number.isFinite(value)) {
-		return fallback;
-	}
-
-	const rounded = Math.round(value);
-	return Math.min(MAX_LLM_TIMEOUT_SEC, Math.max(MIN_LLM_TIMEOUT_SEC, rounded));
 }
