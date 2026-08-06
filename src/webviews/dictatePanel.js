@@ -32,9 +32,11 @@ function getOptionElements() {
 	};
 }
 
+let optionsLocked = false;
+
 function updateDueControlsEnabled() {
 	const els = getOptionElements();
-	const locked = isRecording();
+	const locked = isRecording() || optionsLocked;
 	const todoEnabled = !!els.todoCheck && els.todoCheck.checked;
 	const hasDate = !!els.dueDate && els.dueDate.value.length > 0;
 
@@ -83,6 +85,7 @@ function updateDueControlsEnabled() {
 }
 
 function setOptionsLocked(locked) {
+	optionsLocked = !!locked;
 	const els = getOptionElements();
 
 	if (locked && els.newNotebookRow) {
@@ -268,6 +271,7 @@ function sendAction(action) {
 		setRecording(false);
 		setStatus('Cancelling…');
 	} else if (action === 'transcribeFile') {
+		setOptionsLocked(true);
 		setStatus('Choose a WAV file…');
 	}
 

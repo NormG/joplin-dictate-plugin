@@ -300,20 +300,28 @@ async function ensurePanel(): Promise<string> {
 
 		case 'transcribeFile':
 			await withConfig(async (config) => {
-				const paths = await joplin.views.dialogs.showOpenDialog({
-					title: 'Select a WAV file to transcribe',
-					properties: ['openFile'],
-					filters: [{ name: 'WAV audio', extensions: ['wav'] }],
-				});
+				const noteOptions = getCurrentNoteOptions();
+				await postPanelMessage({ type: 'optionsLocked', locked: true });
 
-				if (!paths || paths.length === 0) {
-					return;
+				try {
+					const paths = await joplin.views.dialogs.showOpenDialog({
+						title: 'Select a WAV file to transcribe',
+						properties: ['openFile'],
+						filters: [{ name: 'WAV audio', extensions: ['wav'] }],
+					});
+
+					if (!paths || paths.length === 0) {
+						await postPanelMessage({ type: 'status', text: 'Ready.' });
+						return;
+					}
+
+					logInfo('Panel: transcribe file', { path: paths[0] });
+					await postPanelMessage({ type: 'status', text: 'Transcribing…' });
+					const result = await transcribeAudioFile(config, paths[0]);
+					await finishDictation(config, result.text, noteOptions);
+				} finally {
+					await postPanelMessage({ type: 'optionsLocked', locked: false });
 				}
-
-				logInfo('Panel: transcribe file', { path: paths[0] });
-				await postPanelMessage({ type: 'status', text: 'Transcribing…' });
-				const result = await transcribeAudioFile(config, paths[0]);
-				await finishDictation(config, result.text, getCurrentNoteOptions());
 			});
 			break;
 		}
