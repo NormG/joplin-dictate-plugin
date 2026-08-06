@@ -112,6 +112,8 @@ export async function registerDictateSettings(): Promise<void> {
 		llmTimeoutSec: {
 			value: defaults.llmTimeoutSec,
 			type: SettingItemType.Int,
+			minimum: 5,
+			maximum: 600,
 			label: 'LLM request timeout (seconds)',
 			description: 'How long to wait for the LLM server when polishing a transcript (5–600). Increase for slow cold starts.',
 			public: true,
