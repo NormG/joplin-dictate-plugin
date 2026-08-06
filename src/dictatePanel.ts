@@ -254,15 +254,18 @@ async function ensurePanel(): Promise<string> {
 			if (getActiveRecording()?.isActive) {
 				logInfo('Panel: stop dictation');
 				await withConfig(async (config) => {
-					await postPanelMessage({ type: 'status', text: 'Transcribing…' });
-					await postPanelMessage({ type: 'recording', active: false });
-					await postPanelMessage({ type: 'optionsLocked', locked: false });
-
 					const noteOptions = sessionNoteOptions ?? getCurrentNoteOptions();
 					sessionNoteOptions = null;
 
-					const result = await stopRecordingAndTranscribe(config);
-					await finishDictation(config, result.text, noteOptions);
+					try {
+						await postPanelMessage({ type: 'status', text: 'Transcribing…' });
+						const result = await stopRecordingAndTranscribe(config);
+						await finishDictation(config, result.text, noteOptions);
+					} finally {
+						await postPanelMessage({ type: 'recording', active: false });
+						await postPanelMessage({ type: 'paused', active: false });
+						await postPanelMessage({ type: 'optionsLocked', locked: false });
+					}
 				});
 			} else {
 				logInfo('Panel: start dictation');

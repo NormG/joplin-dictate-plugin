@@ -198,6 +198,8 @@ function setStatus(text) {
 	const fileBtn = document.getElementById('fileBtn');
 	const busy = text === 'Transcribing…'
 		|| text === 'Stopping…'
+		|| text === 'Cancelling…'
+		|| text === 'Choose a WAV file…'
 		|| text === 'Polishing transcript…'
 		|| text === 'Polishing complete. Saving note…'
 		|| text === 'Polish failed — saving raw transcript…'
@@ -262,13 +264,11 @@ function sendAction(action) {
 	if (action === 'toggle') {
 		if (isRecording()) {
 			setStatus('Stopping…');
-			setRecording(false);
 		} else {
 			setRecording(true);
 			setStatus('Recording… press Stop when done.');
 		}
 	} else if (action === 'cancel') {
-		setRecording(false);
 		setStatus('Cancelling…');
 	} else if (action === 'transcribeFile') {
 		setOptionsLocked(true);
