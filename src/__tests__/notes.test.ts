@@ -6,7 +6,8 @@ vi.mock('../polish', () => ({
 	polishTranscript: vi.fn(async (_config: DictateConfig, text: string) => `polished: ${text}`),
 }));
 
-import { deriveNoteTitle, parseDueDate, processNoteCreation } from '../notes';
+import { deriveNoteTitle, parseDueDate, processNoteCreation, resolveParentFolderId } from '../notes';
+import { NOTEBOOK_DEFAULT, NOTEBOOK_PICK } from '../types';
 import { polishTranscript } from '../polish';
 import joplin from 'api';
 
@@ -21,6 +22,36 @@ const baseConfig: DictateConfig = {
 	defaultParentId: 'folder-default',
 	debugLogging: false,
 };
+
+describe('resolveParentFolderId', () => {
+	beforeEach(() => {
+		vi.mocked(joplin.workspace.selectedFolder).mockReset();
+		vi.mocked(joplin.workspace.selectedFolder).mockResolvedValue(null);
+	});
+
+	it('uses defaultParentId when user selects the default notebook sentinel', async () => {
+		vi.mocked(joplin.workspace.selectedFolder).mockResolvedValue({ id: 'selected-folder', title: 'Selected' });
+
+		const parentId = await resolveParentFolderId(
+			{ ...baseConfig, useSelectedNotebook: true, defaultParentId: 'folder-default' },
+			NOTEBOOK_DEFAULT,
+		);
+
+		expect(parentId).toBe('folder-default');
+		expect(joplin.workspace.selectedFolder).not.toHaveBeenCalled();
+	});
+
+	it('uses selected folder for pick sentinel when useSelectedNotebook is enabled', async () => {
+		vi.mocked(joplin.workspace.selectedFolder).mockResolvedValue({ id: 'selected-folder', title: 'Selected' });
+
+		const parentId = await resolveParentFolderId(
+			{ ...baseConfig, useSelectedNotebook: true, defaultParentId: 'folder-default' },
+			NOTEBOOK_PICK,
+		);
+
+		expect(parentId).toBe('selected-folder');
+	});
+});
 
 describe('deriveNoteTitle', () => {
 	it('uses the first non-empty line', () => {

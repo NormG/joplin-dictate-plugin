@@ -58,6 +58,11 @@ function formatDueHuman(date: Date): string {
 	return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()} ${hh}:${mm}`;
 }
 
+function defaultParentFromConfig(config: DictateConfig): string | undefined {
+	const fallback = config.defaultParentId.trim();
+	return fallback.length > 0 ? fallback : undefined;
+}
+
 export async function resolveParentFolderId(
 	config: DictateConfig,
 	overrideParentId?: string,
@@ -67,6 +72,10 @@ export async function resolveParentFolderId(
 		return override;
 	}
 
+	if (override === NOTEBOOK_DEFAULT) {
+		return defaultParentFromConfig(config);
+	}
+
 	if (config.useSelectedNotebook) {
 		const folder = await joplin.workspace.selectedFolder();
 		if (folder?.id) {
@@ -74,8 +83,7 @@ export async function resolveParentFolderId(
 		}
 	}
 
-	const fallback = config.defaultParentId.trim();
-	return fallback.length > 0 ? fallback : undefined;
+	return defaultParentFromConfig(config);
 }
 
 async function saveNoteFromBody(
