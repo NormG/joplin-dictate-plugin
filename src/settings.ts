@@ -16,6 +16,7 @@ export const SETTING_KEYS = [
 	'polishEnabled',
 	'useSelectedNotebook',
 	'defaultParentId',
+	'debugLogging',
 ] as const;
 
 export type SettingKey = typeof SETTING_KEYS[number];
@@ -46,6 +47,7 @@ export function defaultDictateConfig(): DictateConfig {
 		polishEnabled: false,
 		useSelectedNotebook: true,
 		defaultParentId: '',
+		debugLogging: true,
 	};
 }
 
@@ -130,6 +132,15 @@ export async function registerDictateSettings(): Promise<void> {
 			section: SETTINGS_SECTION,
 			advanced: true,
 		},
+		debugLogging: {
+			value: defaults.debugLogging,
+			type: SettingItemType.Bool,
+			label: 'Write debug log file',
+			description: 'Append pipeline events to dictate.log in the plugin data directory (useful while developing).',
+			public: true,
+			section: SETTINGS_SECTION,
+			advanced: true,
+		},
 	});
 }
 
@@ -146,6 +157,7 @@ export async function loadDictateConfig(): Promise<DictateConfig> {
 		polishEnabled: booleanSetting(values.polishEnabled, defaults.polishEnabled),
 		useSelectedNotebook: booleanSetting(values.useSelectedNotebook, defaults.useSelectedNotebook),
 		defaultParentId: stringSetting(values.defaultParentId, defaults.defaultParentId),
+		debugLogging: booleanSetting(values.debugLogging, defaults.debugLogging),
 	};
 }
 

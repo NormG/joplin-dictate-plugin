@@ -1,14 +1,20 @@
 import joplin from 'api';
 
 import { registerDictatePanelUi } from './dictatePanel';
-import { registerDictateSettings } from './settings';
+import { getLogFilePath, initLogger, logInfo } from './logger';
+import { loadDictateConfig, registerDictateSettings } from './settings';
 
 joplin.plugins.register({
 	onStart: async function() {
 		await registerDictateSettings();
+		const config = await loadDictateConfig();
+		await initLogger(config.debugLogging);
+
+		logInfo('Plugin starting', { debugLogging: config.debugLogging });
+
 		await registerDictatePanelUi();
 
-		// eslint-disable-next-line no-console
-		console.info('Dictate plugin started');
+		const logFile = getLogFilePath();
+		logInfo('Plugin started', logFile ? { logFile } : undefined);
 	},
 });
