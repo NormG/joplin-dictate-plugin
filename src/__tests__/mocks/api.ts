@@ -7,6 +7,9 @@ const api = {
 			title: payload.title,
 		})),
 	},
+	settings: {
+		values: vi.fn(async () => ({})),
+	},
 	workspace: {
 		selectedFolder: vi.fn(async () => null),
 	},

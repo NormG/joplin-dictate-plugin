@@ -16,13 +16,13 @@ const SYSTEM_PROMPT = 'You are a transcript editor. Correct the following voice 
 	+ '\'like\', and \'you know\'. Do not change the meaning or invent content. '
 	+ 'Return only the corrected text, nothing else.';
 
-const POLISH_TIMEOUT_MS = 60000;
-
 export async function polishTranscript(config: DictateConfig, text: string): Promise<string> {
 	const url = `${config.llmUrl.replace(/\/$/, '')}/v1/chat/completions`;
-	logInfo('Polishing transcript', { url, model: config.llmModel, chars: text.length });
+	const timeoutSec = config.llmTimeoutSec;
+	const timeoutMs = timeoutSec * 1000;
+	logInfo('Polishing transcript', { url, model: config.llmModel, chars: text.length, timeoutSec });
 	const controller = new AbortController();
-	const timeoutId = setTimeout(() => controller.abort(), POLISH_TIMEOUT_MS);
+	const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
 	try {
 		const response = await fetch(url, {
@@ -56,7 +56,7 @@ export async function polishTranscript(config: DictateConfig, text: string): Pro
 		return polished;
 	} catch (error) {
 		if (error instanceof Error && error.name === 'AbortError') {
-			throw new Error(`LLM request timed out after ${POLISH_TIMEOUT_MS / 1000}s (${url})`);
+			throw new Error(`LLM request timed out after ${timeoutSec}s (${url})`);
 		}
 		throw error;
 	} finally {

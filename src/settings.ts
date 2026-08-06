@@ -13,6 +13,7 @@ export const SETTING_KEYS = [
 	'whisperBin',
 	'llmUrl',
 	'llmModel',
+	'llmTimeoutSec',
 	'polishEnabled',
 	'useSelectedNotebook',
 	'defaultParentId',
@@ -44,6 +45,7 @@ export function defaultDictateConfig(): DictateConfig {
 		whisperBin: defaultWhisperBin(),
 		llmUrl: 'http://localhost:8080',
 		llmModel: 'qwen/qwen3-coder-30b',
+		llmTimeoutSec: 60,
 		polishEnabled: false,
 		useSelectedNotebook: true,
 		defaultParentId: '',
@@ -107,6 +109,15 @@ export async function registerDictateSettings(): Promise<void> {
 			section: SETTINGS_SECTION,
 			advanced: true,
 		},
+		llmTimeoutSec: {
+			value: defaults.llmTimeoutSec,
+			type: SettingItemType.Int,
+			label: 'LLM request timeout (seconds)',
+			description: 'How long to wait for the LLM server when polishing a transcript (5–600). Increase for slow cold starts.',
+			public: true,
+			section: SETTINGS_SECTION,
+			advanced: true,
+		},
 		polishEnabled: {
 			value: defaults.polishEnabled,
 			type: SettingItemType.Bool,
@@ -154,6 +165,7 @@ export async function loadDictateConfig(): Promise<DictateConfig> {
 		whisperBin: stringSetting(values.whisperBin, defaults.whisperBin),
 		llmUrl: stringSetting(values.llmUrl, defaults.llmUrl),
 		llmModel: stringSetting(values.llmModel, defaults.llmModel),
+		llmTimeoutSec: timeoutSetting(values.llmTimeoutSec, defaults.llmTimeoutSec),
 		polishEnabled: booleanSetting(values.polishEnabled, defaults.polishEnabled),
 		useSelectedNotebook: booleanSetting(values.useSelectedNotebook, defaults.useSelectedNotebook),
 		defaultParentId: stringSetting(values.defaultParentId, defaults.defaultParentId),
@@ -172,4 +184,16 @@ function stringSetting(value: unknown, fallback: string): string {
 
 function booleanSetting(value: unknown, fallback: boolean): boolean {
 	return typeof value === 'boolean' ? value : fallback;
+}
+
+const MIN_LLM_TIMEOUT_SEC = 5;
+const MAX_LLM_TIMEOUT_SEC = 600;
+
+function timeoutSetting(value: unknown, fallback: number): number {
+	if (typeof value !== 'number' || !Number.isFinite(value)) {
+		return fallback;
+	}
+
+	const rounded = Math.round(value);
+	return Math.min(MAX_LLM_TIMEOUT_SEC, Math.max(MIN_LLM_TIMEOUT_SEC, rounded));
 }

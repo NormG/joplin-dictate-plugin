@@ -17,6 +17,7 @@ const baseConfig: DictateConfig = {
 	whisperBin: '/tmp/whisper-cli',
 	llmUrl: 'http://localhost:8080',
 	llmModel: 'test-model',
+	llmTimeoutSec: 60,
 	polishEnabled: false,
 	useSelectedNotebook: false,
 	defaultParentId: 'folder-default',
