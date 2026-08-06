@@ -4,6 +4,8 @@ export interface DictateConfig {
 	whisperBin: string;
 	llmUrl: string;
 	llmModel: string;
+	/** LLM polish request timeout in seconds. */
+	llmTimeoutSec: number;
 	polishEnabled: boolean;
 	useSelectedNotebook: boolean;
 	defaultParentId: string;

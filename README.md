@@ -38,6 +38,7 @@ Tools → Options → **Dictate**:
 - **Polish transcripts with LLM** — off by default.
 - **LLM server URL** — OpenAI-compatible base URL (e.g. `http://localhost:1234`).
 - **LLM model name** — model identifier sent to that server.
+- **LLM request timeout (seconds)** — advanced; default 60. Increase if your LLM server has a slow cold start.
 - **Use selected notebook** — create the note in the notebook currently selected in Joplin.
 - **Default notebook ID** — fallback notebook when the above is disabled.
 
