@@ -197,6 +197,7 @@ function setStatus(text) {
 		|| text === 'Stopping…'
 		|| text === 'Polishing transcript…'
 		|| text === 'Polishing complete. Saving note…'
+		|| text === 'Polish failed — saving raw transcript…'
 		|| text === 'Creating note…';
 
 	if (dictateBtn) {
